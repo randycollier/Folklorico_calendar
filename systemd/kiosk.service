@@ -1,0 +1,22 @@
+[Unit]
+Description=Calendar kiosk browser (cage + Chromium on the HDMI screen)
+After=caldisplay.service systemd-user-sessions.service
+Wants=caldisplay.service
+Conflicts=getty@tty1.service
+
+[Service]
+User=__USER__
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+Environment=XDG_RUNTIME_DIR=/run/user/__UID__
+ExecStartPre=/bin/sh -c 'until curl -sf http://127.0.0.1:8080/ >/dev/null; do sleep 1; done'
+ExecStart=/usr/bin/cage -d -- /usr/bin/chromium --kiosk --noerrdialogs --disable-infobars \
+  --no-first-run --disk-cache-size=1 --disable-features=Translate \
+  --ozone-platform=wayland http://127.0.0.1:8080/
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

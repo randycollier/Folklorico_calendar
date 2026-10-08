@@ -1,0 +1,11 @@
+{
+  "timezone": "America/Chicago",
+  "poll_seconds": 60,
+  "days_ahead": 45,
+  "seconds_per_event": 12,
+  "port": 8080,
+  "calendars": [
+    { "id": "your-address@gmail.com", "name": "Personal", "color": "#5b8def" },
+    { "id": "abc123@group.calendar.google.com", "name": "Rehearsals", "color": "#f2a93b" }
+  ]
+}

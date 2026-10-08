@@ -1,0 +1,60 @@
+/* Starter look: one event at a time, readable from across the room. */
+:root {
+  --bg: #111418;
+  --fg: #f4f1ea;
+  --muted: #9aa3ad;
+  --event-color: #5b8def; /* set per event from config.json */
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, "DejaVu Sans", sans-serif;
+  cursor: none; /* hide the mouse pointer on the kiosk */
+  overflow: hidden;
+}
+
+#card {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 6vw;
+  padding: 6vh 6vw;
+  border-left: 1.2vw solid var(--event-color);
+}
+
+.date { text-align: center; }
+#relative { font-size: 4vh; color: var(--event-color); font-weight: 700; }
+#weekday  { font-size: 5vh; color: var(--muted); }
+#day      { font-size: 30vh; font-weight: 800; line-height: 1; }
+#month    { font-size: 5vh; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); }
+
+#calendar { font-size: 3vh; color: var(--event-color); text-transform: uppercase; letter-spacing: .1em; }
+#title    { font-size: 8vh; line-height: 1.1; margin: 1.5vh 0 3vh; }
+#time     { font-size: 5vh; }
+#location { font-size: 4vh; color: var(--muted); margin-top: 1vh; }
+#description { font-size: 3.2vh; color: var(--muted); margin-top: 3vh; white-space: pre-line; }
+
+#empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 5vh;
+  color: var(--muted);
+}
+
+#status {
+  position: fixed;
+  right: 2vw;
+  bottom: 2vh;
+  font-size: 2vh;
+  padding: .5vh 1vw;
+  border-radius: 1vh;
+  background: #5a2a2a;
+}
+
+[hidden] { display: none !important; }

@@ -1,0 +1,4 @@
+# Laptop only. The Pi installs these with apt (see install.sh).
+google-auth
+requests
+tzdata  # Windows has no built-in time zone data; harmless elsewhere

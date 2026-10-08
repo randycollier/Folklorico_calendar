@@ -1,0 +1,52 @@
+{
+  // Run and Debug panel (Ctrl+Shift+D / Cmd+Shift+D), pick one, press F5.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Server: demo (fake events)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/calsync.py",
+      "args": ["--demo"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Server: real Google Calendar",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/calsync.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Fetch once (test Google access)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/calsync.py",
+      "args": ["--once"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Display: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:8080",
+      "webRoot": "${workspaceFolder}/web",
+      "runtimeArgs": ["--window-size=1920,1080"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Demo: server + display",
+      "configurations": ["Server: demo (fake events)", "Display: Chrome"],
+      "stopAll": true
+    },
+    {
+      "name": "Real: server + display",
+      "configurations": ["Server: real Google Calendar", "Display: Chrome"],
+      "stopAll": true
+    }
+  ]
+}

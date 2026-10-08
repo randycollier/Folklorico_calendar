@@ -1,0 +1,14 @@
+[Unit]
+Description=Calendar sync server (Google Calendar to localhost:8080)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=/opt/caldisplay
+ExecStart=/usr/bin/python3 /opt/caldisplay/calsync.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
