@@ -7,24 +7,58 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main id="card" hidden>
-    <section class="date">
-      <div id="relative"></div>
-      <div id="weekday"></div>
-      <div id="day"></div>
-      <div id="month"></div>
-    </section>
-    <section class="info">
-      <div id="calendar"></div>
-      <h1 id="title"></h1>
-      <div id="time"></div>
-      <div id="location"></div>
-      <p id="description"></p>
-    </section>
-  </main>
+  <header class="topbar">
+    <h1 class="board-title" id="board-title">Calendar</h1>
+    <div class="status">
+      <span class="offline" id="offline" hidden>Offline</span>
+      <span class="clock" id="clock"></span>
+    </div>
+  </header>
 
-  <div id="empty">Loading calendar…</div>
-  <div id="status" hidden></div>
+  <main class="stage" id="stage" aria-live="polite"></main>
+
+  <footer class="footer">
+    <p class="up-next" id="up-next" hidden>
+      <span class="up-next-label">Up next</span>
+      <span class="up-next-when" id="up-next-when"></span>
+      <span class="up-next-title" id="up-next-title"></span>
+    </p>
+    <ol class="dots" id="dots"></ol>
+  </footer>
+
+  <!--
+    One event card. Elements with data-field get filled in by app.js:
+    relative, weekday, day, month, calendar, title, time, location,
+    description, nowBadge. Empty fields are hidden. Move or restyle freely.
+  -->
+  <template id="event-template">
+    <article class="event">
+      <div class="date">
+        <div class="relative" data-field="relative"></div>
+        <div class="weekday" data-field="weekday"></div>
+        <div class="day" data-field="day"></div>
+        <div class="month" data-field="month"></div>
+      </div>
+      <div class="details">
+        <div class="meta">
+          <span class="chip"></span>
+          <span class="calendar" data-field="calendar"></span>
+          <span class="now-badge" data-field="nowBadge"></span>
+        </div>
+        <h2 class="title" data-field="title"></h2>
+        <p class="time" data-field="time"></p>
+        <p class="location" data-field="location"></p>
+        <p class="description" data-field="description"></p>
+      </div>
+    </article>
+  </template>
+
+  <template id="empty-template">
+    <article class="empty">
+      <p class="empty-title">No upcoming events</p>
+      <p class="empty-sub">New events will show up here automatically.</p>
+    </article>
+  </template>
 
   <script src="app.js"></script>
 </body>

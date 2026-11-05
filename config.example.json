@@ -2,10 +2,16 @@
   "timezone": "America/Chicago",
   "poll_seconds": 60,
   "days_ahead": 45,
-  "seconds_per_event": 12,
-  "port": 8080,
+  "service_account_file": "service-account.json",
   "calendars": [
-    { "id": "your-address@gmail.com", "name": "Personal", "color": "#5b8def" },
-    { "id": "abc123@group.calendar.google.com", "name": "Rehearsals", "color": "#f2a93b" }
-  ]
+    { "id": "your.address@gmail.com", "name": "RRBF", "color": "#e4572e" },
+    { "id": "paste-calendar-id@group.calendar.google.com", "name": "Rehearsals", "color": "#f2a93b" },
+    { "id": "another-calendar-id@group.calendar.google.com", "name": "Performances", "color": "#3fa7d6" }
+  ],
+  "display": {
+    "title": "RRBF Calendar",
+    "seconds_per_event": 12,
+    "max_events": 10,
+    "hour12": true
+  }
 }

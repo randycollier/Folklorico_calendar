@@ -1,0 +1,26 @@
+# Settings for switching the monitor to the Pi's HDMI input.
+# Installed to /etc/default/caldisplay. After editing, test with:
+#   sudo /opt/caldisplay/hdmi-source.sh status
+#   sudo /opt/caldisplay/hdmi-source.sh claim
+
+# --- HDMI-CEC (TVs and some monitors) ---
+# auto = use it if the board has a CEC device, no = never
+CEC_ENABLE=auto
+CEC_DEVICE=/dev/cec0
+OSD_NAME=Calendar
+
+# --- DDC/CI (most PC monitors) ---
+# The monitor's input code for the port the Pi is plugged into. Find it with:
+#   sudo ddcutil capabilities | grep -A8 "Feature: 60"
+# Common codes: 0x11 = HDMI-1, 0x12 = HDMI-2, 0x0f = DisplayPort-1, 0x03 = DVI-1
+# Leave empty to skip DDC/CI.
+DDC_INPUT=
+# Only if "ddcutil detect" shows more than one display: its I2C bus number.
+DDC_BUS=
+
+# --- Timing ---
+# How long to keep trying after boot (the monitor may still be starting up).
+CLAIM_SECONDS=60
+# yes = switch back to the Pi each time the monitor wakes from standby
+WATCH=yes
+WATCH_INTERVAL=10

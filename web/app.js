@@ -1,82 +1,219 @@
-// Starter display logic: show one event, wait, show the next, loop.
-// Re-reads /api/events every 15 seconds so calendar changes show up.
+"use strict";
+
+// Kiosk logic: fetch /api/events, show one upcoming event at a time, loop,
+// and pick up calendar changes. Visual changes belong in index.html and
+// style.css; you shouldn't need to edit this file for those.
+
+const POLL_MS = 15000;              // how often to ask the local server for changes
+const RELOAD_MS = 6 * 3600 * 1000;  // full page reload now and then keeps Chromium lean
+
+let data = null;        // last /api/events payload
+let list = [];          // events in the current rotation
+let index = 0;          // position in the rotation
+let currentId = null;   // id of the event on screen
+let rotateTimer = null;
+let rotateSeconds = 0;
 
 const $ = (id) => document.getElementById(id);
-let events = [];
-let index = 0;
-let secondsPerEvent = 12;
 
-async function refresh() {
-  try {
-    const res = await fetch("/api/events", { cache: "no-store" });
-    const data = await res.json();
-    events = data.events || [];
-    secondsPerEvent = data.seconds_per_event || 12;
-    $("status").hidden = !data.error;
-    $("status").textContent = "Offline";
-  } catch {
-    $("status").hidden = false;
-    $("status").textContent = "Offline";
+// ---------- dates (always in the calendar's time zone) ----------
+
+const tz = () => (data && data.timezone) || undefined;
+const hour12 = () => !data || data.display.hour12 !== false;
+
+function fmt(opts, date) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: tz(), ...opts }).format(date);
+}
+
+function dayKey(date) {  // "2026-10-09" in the calendar's time zone
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz(), year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(date);
+}
+
+function daysBetween(a, b) {
+  const ms = Date.parse(dayKey(b) + "T00:00:00Z") - Date.parse(dayKey(a) + "T00:00:00Z");
+  return Math.round(ms / 86400000);
+}
+
+function relativeLabel(now, date) {
+  const n = daysBetween(now, date);
+  if (n <= 0) return "Today";
+  if (n === 1) return "Tomorrow";
+  return `In ${n} days`;
+}
+
+function timeText(ev, start, end) {
+  if (ev.allDay) {
+    const last = new Date(end.getTime() - 1);  // end date is exclusive
+    if (dayKey(start) === dayKey(last)) return "All day";
+    const d = { month: "short", day: "numeric" };
+    return `All day, ${fmt(d, start)} to ${fmt(d, last)}`;
   }
+  const opts = { timeZone: tz(), hour: "numeric", minute: "2-digit", hour12: hour12() };
+  if (dayKey(start) !== dayKey(end)) Object.assign(opts, { month: "short", day: "numeric" });
+  const f = new Intl.DateTimeFormat("en-US", opts);
+  return f.formatRange ? f.formatRange(start, end) : `${f.format(start)} to ${f.format(end)}`;
 }
 
-function parse(value, allDay) {
-  // All-day events come as "2026-10-08". Read them as local midnight.
-  return allDay ? new Date(value + "T00:00:00") : new Date(value);
+// ---------- event fields ----------
+
+function fields(ev, now) {
+  const start = new Date(ev.start);
+  const end = new Date(ev.end);
+  const happening = start <= now && now < end;
+  // A multi-day event that already started shows today's date.
+  const shown = start < now ? now : start;
+  return {
+    relative: relativeLabel(now, shown),
+    weekday: fmt({ weekday: "long" }, shown),
+    day: fmt({ day: "numeric" }, shown),
+    month: fmt({ month: "long" }, shown),
+    calendar: ev.calendar,
+    title: ev.title,
+    time: timeText(ev, start, end),
+    location: ev.location,
+    description: ev.description,
+    nowBadge: happening ? "Happening now" : "",
+  };
 }
 
-function relativeLabel(start) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const day = new Date(start); day.setHours(0, 0, 0, 0);
-  const diff = Math.round((day - today) / 86400000);
-  if (diff <= 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  return `In ${diff} days`;
+function upcoming(now) {
+  if (!data) return [];
+  const max = Number(data.display.max_events) || 10;
+  return data.events
+    .filter((ev) => new Date(ev.end) > now)
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+    .slice(0, max);
 }
 
-function timeLabel(e, start, end) {
-  if (e.allDay) return "All day";
-  const fmt = { hour: "numeric", minute: "2-digit" };
-  return `${start.toLocaleTimeString([], fmt)} to ${end.toLocaleTimeString([], fmt)}`;
+// ---------- rendering ----------
+
+function fill(node, ev, now) {
+  const f = fields(ev, now);
+  node.querySelectorAll("[data-field]").forEach((el) => {
+    const value = f[el.dataset.field];
+    el.textContent = value || "";
+    el.hidden = !value;
+  });
+  if (ev.color) node.style.setProperty("--event-color", ev.color);
+  node.classList.toggle("is-now", Boolean(f.nowBadge));
 }
 
-function setText(id, text) {
-  $(id).textContent = text || "";
-  $(id).hidden = !text;
-}
-
-function show() {
-  if (!events.length) {
-    $("card").hidden = true;
-    $("empty").hidden = false;
-    $("empty").textContent = "No upcoming events";
+function render(ev, now, animate) {
+  const stage = $("stage");
+  const existing = stage.firstElementChild;
+  // Same event, nothing else to show: update in place instead of replaying the fade.
+  if (!animate && ev && existing && existing.dataset.id === ev.id) {
+    fill(existing, ev, now);
     return;
   }
-  if (index >= events.length) index = 0;
-  const e = events[index];
-  const start = parse(e.start, e.allDay);
-  const end = parse(e.end, e.allDay);
-
-  document.documentElement.style.setProperty("--event-color", e.color);
-  setText("relative", relativeLabel(start));
-  setText("weekday", start.toLocaleDateString([], { weekday: "long" }));
-  setText("day", String(start.getDate()));
-  setText("month", start.toLocaleDateString([], { month: "long" }));
-  setText("calendar", e.calendar);
-  setText("title", e.title);
-  setText("time", timeLabel(e, start, end));
-  setText("location", e.location);
-  setText("description", e.description);
-
-  $("empty").hidden = true;
-  $("card").hidden = false;
+  let node;
+  if (ev) {
+    node = $("event-template").content.firstElementChild.cloneNode(true);
+    node.dataset.id = ev.id;
+    fill(node, ev, now);
+  } else {
+    if (existing && existing.classList.contains("empty")) return;
+    node = $("empty-template").content.firstElementChild.cloneNode(true);
+  }
+  stage.replaceChildren(node);
 }
 
-async function loop() {
-  show();
+function renderFooter(now) {
+  const dots = $("dots");
+  dots.replaceChildren(...list.map((_, i) => {
+    const li = document.createElement("li");
+    if (i === index) li.className = "active";
+    return li;
+  }));
+  dots.hidden = list.length < 2;
+
+  const next = list.length > 1 ? list[(index + 1) % list.length] : null;
+  $("up-next").hidden = !next;
+  if (next) {
+    const start = new Date(next.start);
+    const shown = start < now ? now : start;
+    const when = relativeLabel(now, shown);
+    const prefix = when === "Today" || when === "Tomorrow"
+      ? when : fmt({ weekday: "short", month: "short", day: "numeric" }, shown);
+    const time = next.allDay ? "" : " " + fmt({ hour: "numeric", minute: "2-digit", hour12: hour12() }, start);
+    $("up-next-when").textContent = prefix + time;
+    $("up-next-title").textContent = next.title;
+  }
+}
+
+function show(animate) {
+  const now = new Date();
+  list = upcoming(now);
+  if (index >= list.length) index = 0;
+  const ev = list[index] || null;
+  currentId = ev ? ev.id : null;
+  render(ev, now, animate);
+  renderFooter(now);
+}
+
+function advance() {
   index += 1;
-  setTimeout(loop, secondsPerEvent * 1000);
+  show(list.length > 1);
 }
 
-refresh().then(loop);
-setInterval(refresh, 15000);
+function startRotation() {
+  const secs = Math.max(3, Number(data.display.seconds_per_event) || 12);
+  if (secs === rotateSeconds && rotateTimer) return;
+  clearInterval(rotateTimer);
+  rotateSeconds = secs;
+  rotateTimer = setInterval(advance, secs * 1000);
+}
+
+// ---------- data ----------
+
+function setOffline(on) {
+  $("offline").hidden = !on;
+}
+
+function applyChange(first) {
+  $("board-title").textContent = data.display.title || "Calendar";
+  document.title = data.display.title || "Calendar";
+  const now = new Date();
+  list = upcoming(now);
+  const stillThere = list.findIndex((ev) => ev.id === currentId);
+  if (stillThere >= 0) {
+    index = stillThere;   // keep the event on screen, refresh its details
+    show(false);
+  } else {
+    index = 0;            // it was deleted or moved: start over from the next event
+    show(true);
+    clearInterval(rotateTimer);
+    rotateTimer = null;
+  }
+  startRotation();
+}
+
+async function poll() {
+  try {
+    const res = await fetch("/api/events", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const next = await res.json();
+    setOffline(Boolean(next.error));
+    const changed = !data || next.version !== data.version;
+    const first = !data;
+    data = next;
+    if (changed) applyChange(first);
+  } catch (err) {
+    setOffline(true);
+  }
+  setTimeout(poll, data ? POLL_MS : 2000);
+}
+
+function tickClock() {
+  const now = new Date();
+  $("clock").textContent =
+    fmt({ weekday: "long", month: "long", day: "numeric" }, now) + "  ·  " +
+    fmt({ hour: "numeric", minute: "2-digit", hour12: hour12() }, now);
+}
+
+tickClock();
+setInterval(tickClock, 1000);
+poll();
+setTimeout(() => location.reload(), RELOAD_MS);

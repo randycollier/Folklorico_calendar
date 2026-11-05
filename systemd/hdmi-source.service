@@ -1,0 +1,12 @@
+[Unit]
+Description=Switch the monitor to the Pi's HDMI input
+After=kiosk.service
+
+[Service]
+Type=simple
+ExecStart=/opt/caldisplay/hdmi-source.sh service
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

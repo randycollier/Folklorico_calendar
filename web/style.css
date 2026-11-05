@@ -1,60 +1,253 @@
-/* Starter look: one event at a time, readable from across the room. */
+/* Calendar kiosk look. Sizes use vh/vw so it scales to any monitor. */
+
 :root {
-  --bg: #111418;
-  --fg: #f4f1ea;
+  --bg: #0e1013;
+  --text: #f5f1e8;
   --muted: #9aa3ad;
-  --event-color: #5b8def; /* set per event from config.json */
+  --faint: #3a414b;
+  --accent: #f2a93b;
+  --font: "Inter", "Noto Sans", "DejaVu Sans", system-ui, sans-serif;
 }
 
-* { box-sizing: border-box; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 
-html, body {
-  height: 100%;
+html, body { height: 100%; }
+
+body {
   background: var(--bg);
-  color: var(--fg);
-  font-family: system-ui, "DejaVu Sans", sans-serif;
-  cursor: none; /* hide the mouse pointer on the kiosk */
+  color: var(--text);
+  font-family: var(--font);
   overflow: hidden;
+  cursor: none;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 4.5vh 5vw;
+  -webkit-font-smoothing: antialiased;
 }
 
-#card {
-  height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 2fr;
+/* ---------- header ---------- */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6vw;
-  padding: 6vh 6vw;
-  border-left: 1.2vw solid var(--event-color);
+  gap: 2vw;
 }
 
-.date { text-align: center; }
-#relative { font-size: 4vh; color: var(--event-color); font-weight: 700; }
-#weekday  { font-size: 5vh; color: var(--muted); }
-#day      { font-size: 30vh; font-weight: 800; line-height: 1; }
-#month    { font-size: 5vh; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); }
-
-#calendar { font-size: 3vh; color: var(--event-color); text-transform: uppercase; letter-spacing: .1em; }
-#title    { font-size: 8vh; line-height: 1.1; margin: 1.5vh 0 3vh; }
-#time     { font-size: 5vh; }
-#location { font-size: 4vh; color: var(--muted); margin-top: 1vh; }
-#description { font-size: 3.2vh; color: var(--muted); margin-top: 3vh; white-space: pre-line; }
-
-#empty {
-  height: 100%;
-  display: grid;
-  place-items: center;
-  font-size: 5vh;
+.board-title {
+  font-size: 2.4vh;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-#status {
-  position: fixed;
-  right: 2vw;
-  bottom: 2vh;
-  font-size: 2vh;
-  padding: .5vh 1vw;
-  border-radius: 1vh;
-  background: #5a2a2a;
+.status { display: flex; align-items: center; gap: 1.5vw; }
+
+.clock {
+  font-size: 2.6vh;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
-[hidden] { display: none !important; }
+.offline {
+  font-size: 1.7vh;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffb4a8;
+  border: 0.15vh solid currentColor;
+  border-radius: 99px;
+  padding: 0.35em 1em;
+}
+
+/* ---------- event card ---------- */
+
+.stage {
+  display: grid;
+  align-items: center;
+  min-height: 0;
+}
+
+.event {
+  --event-color: var(--accent);
+  display: grid;
+  grid-template-columns: 27vw 1fr;
+  gap: 5vw;
+  align-items: center;
+  animation: enter 0.7s ease-out both;
+}
+
+.date {
+  text-align: right;
+  padding-right: 4vw;
+  border-right: 0.6vh solid var(--event-color);
+}
+
+.relative {
+  font-size: 3.2vh;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--event-color);
+}
+
+.weekday {
+  font-size: 4vh;
+  color: var(--muted);
+  margin-top: 1.2vh;
+}
+
+.day {
+  font-size: 27vh;
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.month {
+  font-size: 4.2vh;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.details { min-width: 0; }
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  font-size: 2.5vh;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chip {
+  width: 1.7vh;
+  height: 1.7vh;
+  border-radius: 50%;
+  background: var(--event-color);
+  flex: none;
+}
+
+.now-badge {
+  color: var(--bg);
+  background: var(--event-color);
+  padding: 0.3em 0.9em;
+  border-radius: 99px;
+  letter-spacing: 0.1em;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.title {
+  margin-top: 2.4vh;
+  font-size: 8.5vh;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.time {
+  margin-top: 3vh;
+  font-size: 4.6vh;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.location {
+  margin-top: 1.4vh;
+  font-size: 3.4vh;
+  color: var(--muted);
+}
+
+.description {
+  margin-top: 3.2vh;
+  max-width: 62ch;
+  font-size: 2.8vh;
+  line-height: 1.45;
+  color: var(--muted);
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.is-now .day { color: var(--event-color); }
+
+/* ---------- empty state ---------- */
+
+.empty { text-align: center; animation: enter 0.7s ease-out both; }
+.empty-title { font-size: 7vh; font-weight: 700; }
+.empty-sub { margin-top: 2vh; font-size: 3vh; color: var(--muted); }
+
+/* ---------- footer ---------- */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3vw;
+  min-height: 3vh;
+  font-size: 2.4vh;
+  color: var(--muted);
+}
+
+.up-next {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.up-next-label {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-right: 1vw;
+}
+
+.up-next-when { margin-right: 1vw; }
+.up-next-title { color: var(--text); }
+
+.dots {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.9vh;
+  flex: none;
+  margin-left: auto;
+}
+
+.dots li {
+  width: 1vh;
+  height: 1vh;
+  border-radius: 99px;
+  background: var(--faint);
+  transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+.dots li.active { width: 3.2vh; background: var(--text); }
+
+/* ---------- motion ---------- */
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(1.5vh); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes pulse {
+  50% { opacity: 0.6; }
+}
