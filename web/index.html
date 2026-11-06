@@ -15,16 +15,24 @@
     </div>
   </header>
 
-  <main class="stage" id="stage" aria-live="polite"></main>
+  <div class="layout">
+    <!-- Left column: this month, next month, then the upcoming events. -->
+    <aside class="sidebar">
+      <section class="month" id="month-0"></section>
+      <section class="month" id="month-1"></section>
+      <ol class="agenda" id="agenda"></ol>
+    </aside>
 
-  <footer class="footer">
-    <p class="up-next" id="up-next" hidden>
-      <span class="up-next-label">Up next</span>
-      <span class="up-next-when" id="up-next-when"></span>
-      <span class="up-next-title" id="up-next-title"></span>
-    </p>
-    <ol class="dots" id="dots"></ol>
-  </footer>
+    <div class="main">
+      <main class="stage" id="stage" aria-live="polite"></main>
+
+      <!-- Shown only when display.qr_url is set in config.json. -->
+      <aside class="qr" id="qr" hidden>
+        <div class="qr-code" id="qr-code"></div>
+        <p class="qr-text" id="qr-text"></p>
+      </aside>
+    </div>
+  </div>
 
   <!--
     One event card. Elements with data-field get filled in by app.js:
@@ -37,7 +45,7 @@
         <div class="relative" data-field="relative"></div>
         <div class="weekday" data-field="weekday"></div>
         <div class="day" data-field="day"></div>
-        <div class="month" data-field="month"></div>
+        <div class="month-name" data-field="month"></div>
       </div>
       <div class="details">
         <div class="meta">
@@ -60,6 +68,7 @@
     </article>
   </template>
 
+  <script src="vendor/qrcode.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

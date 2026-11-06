@@ -12,6 +12,8 @@
     "title": "RRBF Calendar",
     "seconds_per_event": 12,
     "max_events": 10,
-    "hour12": true
+    "hour12": true,
+    "qr_url": "https://paste-your-sign-up-link-here",
+    "qr_text": "Dancers: scan to sign up for the private calendar"
   }
 }

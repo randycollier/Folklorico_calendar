@@ -21,8 +21,9 @@ body {
   overflow: hidden;
   cursor: none;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 4.5vh 5vw;
+  grid-template-rows: auto 1fr;
+  gap: 3vh;
+  padding: 4vh 3.5vw;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -62,6 +63,170 @@ body {
   padding: 0.35em 1em;
 }
 
+/* ---------- layout ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 23vw 1fr;
+  gap: 3vw;
+  min-height: 0;
+}
+
+.main {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---------- sidebar: two months + agenda ---------- */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2.6vh;
+  min-height: 0;
+  padding-right: 2.2vw;
+  border-right: 0.15vh solid #232830;
+}
+
+.month-title {
+  font-size: 1.8vh;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.8vh;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3vh 0;
+  text-align: center;
+  font-size: 1.75vh;
+  font-variant-numeric: tabular-nums;
+}
+
+.month-grid .dow {
+  font-size: 1.3vh;
+  font-weight: 700;
+  color: #5b636e;
+  padding-bottom: 0.3vh;
+}
+
+.month-grid .d {
+  position: relative;
+  padding: 0.45vh 0 0.75vh;
+  border-radius: 0.6vh;
+  color: #c9ccd1;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.month-grid .d.past { color: var(--faint); }
+.month-grid .d.today { box-shadow: inset 0 0 0 0.15vh var(--muted); }
+
+.month-grid .dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.2vh;
+  display: flex;
+  justify-content: center;
+  gap: 0.25vh;
+}
+
+.month-grid .dots i {
+  width: 0.5vh;
+  height: 0.5vh;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.month-grid .d.active {
+  background: var(--c);
+  color: var(--bg);
+  font-weight: 700;
+}
+.month-grid .d.active .dots { display: none; }
+
+.agenda {
+  list-style: none;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  border-top: 0.15vh solid #232830;
+  padding-top: 2vh;
+  /* Fade the last row out instead of cutting it off. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 6vh), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 6vh), transparent);
+}
+
+/* Room after the last row so the highlighted one can always scroll clear of the fade. */
+.agenda::after { content: ""; flex: none; height: 6vh; }
+
+.agenda li {
+  flex: none;
+  display: grid;
+  grid-template-columns: 7.6vh 1fr;
+  gap: 1vh;
+  align-items: baseline;
+  padding: 0.9vh 1vh;
+  border-left: 0.4vh solid transparent;
+  border-radius: 0.6vh;
+  font-size: 1.9vh;
+  color: var(--muted);
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+.agenda .when {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agenda .what {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agenda li.active {
+  background: #1d2128;
+  border-left-color: var(--c);
+  color: var(--text);
+}
+.agenda li.active .when { color: var(--c); }
+
+/* ---------- QR code ---------- */
+
+.qr {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+  max-width: 32vw;
+}
+
+.qr-code {
+  flex: none;
+  width: 19vh;
+  height: 19vh;
+  border-radius: 0.8vh;
+  overflow: hidden;
+}
+.qr-code svg { display: block; width: 100%; height: 100%; }
+
+.qr-text {
+  font-size: 2.1vh;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.qr-text b { color: var(--text); }
+
 /* ---------- event card ---------- */
 
 .stage {
@@ -73,15 +238,15 @@ body {
 .event {
   --event-color: var(--accent);
   display: grid;
-  grid-template-columns: 27vw 1fr;
-  gap: 5vw;
+  grid-template-columns: 19vw 1fr;
+  gap: 3.5vw;
   align-items: center;
   animation: enter 0.7s ease-out both;
 }
 
 .date {
   text-align: right;
-  padding-right: 4vw;
+  padding-right: 3vw;
   border-right: 0.6vh solid var(--event-color);
 }
 
@@ -100,14 +265,14 @@ body {
 }
 
 .day {
-  font-size: 27vh;
+  font-size: 22vh;
   font-weight: 700;
   line-height: 0.92;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 
-.month {
+.month-name {
   font-size: 4.2vh;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -147,7 +312,7 @@ body {
 
 .title {
   margin-top: 2.4vh;
-  font-size: 8.5vh;
+  font-size: 7vh;
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -191,55 +356,6 @@ body {
 .empty { text-align: center; animation: enter 0.7s ease-out both; }
 .empty-title { font-size: 7vh; font-weight: 700; }
 .empty-sub { margin-top: 2vh; font-size: 3vh; color: var(--muted); }
-
-/* ---------- footer ---------- */
-
-.footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 3vw;
-  min-height: 3vh;
-  font-size: 2.4vh;
-  color: var(--muted);
-}
-
-.up-next {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.up-next-label {
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-  margin-right: 1vw;
-}
-
-.up-next-when { margin-right: 1vw; }
-.up-next-title { color: var(--text); }
-
-.dots {
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.9vh;
-  flex: none;
-  margin-left: auto;
-}
-
-.dots li {
-  width: 1vh;
-  height: 1vh;
-  border-radius: 99px;
-  background: var(--faint);
-  transition: width 0.4s ease, background-color 0.4s ease;
-}
-
-.dots li.active { width: 3.2vh; background: var(--text); }
 
 /* ---------- motion ---------- */
 

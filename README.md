@@ -61,7 +61,9 @@ Edit the files in `web/` and refresh the browser.
   event fades in with the `enter` animation on `.event`.
 - **`web/app.js`** is the logic: builds the list of the next `max_events`
   events, shows one for `seconds_per_event`, loops, and redraws when the
-  calendar changes. You shouldn't need to touch it for visual changes.
+  calendar changes. It also draws the left column (this month, next month,
+  and the event list, with the event on screen highlighted) and the QR code
+  (using `web/vendor/qrcode.js`, so it works offline). You shouldn't need to touch it for visual changes.
 
 Each event's data (from `/api/events`):
 
@@ -214,12 +216,14 @@ If WiFi drops, the screen keeps showing the last good data with a small
 |---|---|---|
 | `timezone` | America/Chicago | Also set as the Pi's time zone by install.sh |
 | `poll_seconds` | 60 | How often to check Google |
-| `days_ahead` | 45 | How far ahead to look for events |
+| `days_ahead` | 45 | How far ahead to look for events (always at least through the end of next month, for the calendars on the left) |
 | `calendars` | | List of `{ "id", "name", "color" }` |
 | `display.title` | "Calendar" | Header text |
 | `display.seconds_per_event` | 12 | Time each event stays on screen |
 | `display.max_events` | 10 | How many upcoming events to cycle through |
 | `display.hour12` | true | `false` for 24-hour times |
+| `display.qr_url` | "" | Link the QR code in the bottom-right opens. Empty hides the QR code |
+| `display.qr_text` | "Dancers: scan to sign up for the private calendar" | Text next to the QR code. Anything before the first `:` is bold |
 
 ## Troubleshooting
 

@@ -120,26 +120,157 @@ function render(ev, now, animate) {
   stage.replaceChildren(node);
 }
 
-function renderFooter(now) {
-  const dots = $("dots");
-  dots.replaceChildren(...list.map((_, i) => {
-    const li = document.createElement("li");
-    if (i === index) li.className = "active";
-    return li;
-  }));
-  dots.hidden = list.length < 2;
+// ---------- sidebar: two months + agenda ----------
 
-  const next = list.length > 1 ? list[(index + 1) % list.length] : null;
-  $("up-next").hidden = !next;
-  if (next) {
-    const start = new Date(next.start);
-    const shown = start < now ? now : start;
-    const when = relativeLabel(now, shown);
-    const prefix = when === "Today" || when === "Tomorrow"
-      ? when : fmt({ weekday: "short", month: "short", day: "numeric" }, shown);
-    const time = next.allDay ? "" : " " + fmt({ hour: "numeric", minute: "2-digit", hour12: hour12() }, start);
-    $("up-next-when").textContent = prefix + time;
-    $("up-next-title").textContent = next.title;
+const DAY_MS = 86400000;
+
+function keyToUtc(key) { return Date.parse(key + "T00:00:00Z"); }
+function utcToKey(ms) { return new Date(ms).toISOString().slice(0, 10); }
+
+// Every calendar day ("YYYY-MM-DD") an event touches, in the calendar's time zone.
+function eventDays(ev) {
+  const first = dayKey(new Date(ev.start));
+  const endMs = new Date(ev.end).getTime();
+  const last = dayKey(new Date(Math.max(endMs - 1, new Date(ev.start).getTime())));
+  const days = [];
+  for (let t = keyToUtc(first); t <= keyToUtc(last) && days.length < 400; t += DAY_MS) {
+    days.push(utcToKey(t));
+  }
+  return days;
+}
+
+function renderMonth(el, year, month, now, colorsByDay, active) {
+  const todayKey = dayKey(now);
+  const firstMs = Date.UTC(year, month - 1, 1);
+  const lead = new Date(firstMs).getUTCDay();             // weeks start on Sunday
+  const count = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  const title = document.createElement("div");
+  title.className = "month-title";
+  title.textContent = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC", month: "long", year: "numeric",
+  }).format(firstMs);
+
+  const grid = document.createElement("div");
+  grid.className = "month-grid";
+  for (const w of ["S", "M", "T", "W", "T", "F", "S"]) {
+    const h = document.createElement("span");
+    h.className = "dow";
+    h.textContent = w;
+    grid.append(h);
+  }
+  for (let i = 0; i < lead; i++) grid.append(document.createElement("span"));
+  for (let d = 1; d <= count; d++) {
+    const key = utcToKey(firstMs + (d - 1) * DAY_MS);
+    const cell = document.createElement("span");
+    cell.className = "d";
+    cell.textContent = d;
+    if (key < todayKey) cell.classList.add("past");
+    if (key === todayKey) cell.classList.add("today");
+    const colors = colorsByDay.get(key);
+    if (colors) {
+      const dots = document.createElement("span");
+      dots.className = "dots";
+      for (const c of [...colors].slice(0, 3)) {
+        const dot = document.createElement("i");
+        dot.style.setProperty("--c", c);
+        dots.append(dot);
+      }
+      cell.append(dots);
+    }
+    if (active && active.days.has(key)) {
+      cell.classList.add("active");
+      cell.style.setProperty("--c", active.color);
+    }
+    grid.append(cell);
+  }
+  el.replaceChildren(title, grid);
+}
+
+function renderMonths(now) {
+  const colorsByDay = new Map();
+  for (const ev of (data ? data.events : [])) {
+    if (new Date(ev.end) <= now) continue;
+    for (const key of eventDays(ev)) {
+      if (!colorsByDay.has(key)) colorsByDay.set(key, new Set());
+      colorsByDay.get(key).add(ev.color || "var(--accent)");
+    }
+  }
+  const ev = list[index];
+  const active = ev ? { days: new Set(eventDays(ev)), color: ev.color || "var(--accent)" } : null;
+  const [y, m] = dayKey(now).split("-").map(Number);
+  renderMonth($("month-0"), y, m, now, colorsByDay, active);
+  renderMonth($("month-1"), m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, now, colorsByDay, active);
+}
+
+let agendaSignature = "";
+
+function renderAgenda(now) {
+  const agenda = $("agenda");
+  const signature = dayKey(now) + "|" + list.map((ev) => ev.id + ev.start + ev.title).join(",");
+  if (signature !== agendaSignature) {
+    agendaSignature = signature;
+    agenda.replaceChildren(...list.map((ev) => {
+      const start = new Date(ev.start);
+      const shown = start < now ? now : start;
+      const li = document.createElement("li");
+      li.dataset.id = ev.id;
+      li.style.setProperty("--c", ev.color || "var(--accent)");
+      const when = document.createElement("span");
+      when.className = "when";
+      when.textContent = fmt({ month: "short", day: "numeric" }, shown);
+      const what = document.createElement("span");
+      what.className = "what";
+      what.textContent = ev.title;
+      li.append(when, what);
+      return li;
+    }));
+  }
+  let activeLi = null;
+  for (const li of agenda.children) {
+    const on = li.dataset.id === currentId;
+    li.classList.toggle("active", on);
+    if (on) activeLi = li;
+  }
+  // Keep the highlighted event in view: scroll so it sits about a third of
+  // the way down, which also shows a couple of events before it.
+  if (activeLi) {
+    const target = activeLi.offsetTop - agenda.offsetTop - agenda.clientHeight / 3;
+    const max = agenda.scrollHeight - agenda.clientHeight;
+    agenda.scrollTo({ top: Math.max(0, Math.min(max, target)), behavior: "smooth" });
+  } else {
+    agenda.scrollTo({ top: 0 });
+  }
+}
+
+function renderSidebar(now) {
+  renderMonths(now);
+  renderAgenda(now);
+}
+
+// ---------- QR code ----------
+
+let qrShown = "";
+
+function renderQr() {
+  const url = (data.display.qr_url || "").trim();
+  const text = data.display.qr_text || "";
+  $("qr").hidden = !url || typeof qrcode !== "function";
+  if ($("qr").hidden || url + text === qrShown) return;
+  qrShown = url + text;
+  const qr = qrcode(0, "L");   // 0 = smallest size that fits the link
+  qr.addData(url);
+  qr.make();
+  $("qr-code").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+  // Text before the first colon is shown in bold, e.g. "Dancers: scan to ...".
+  const m = text.match(/^([^:]{1,30}:)\s*(.*)$/s);
+  const p = $("qr-text");
+  if (m) {
+    const b = document.createElement("b");
+    b.textContent = m[1];
+    p.replaceChildren(b, " " + m[2]);
+  } else {
+    p.textContent = text;
   }
 }
 
@@ -150,7 +281,7 @@ function show(animate) {
   const ev = list[index] || null;
   currentId = ev ? ev.id : null;
   render(ev, now, animate);
-  renderFooter(now);
+  renderSidebar(now);
 }
 
 function advance() {
@@ -175,6 +306,7 @@ function setOffline(on) {
 function applyChange(first) {
   $("board-title").textContent = data.display.title || "Calendar";
   document.title = data.display.title || "Calendar";
+  renderQr();
   const now = new Date();
   list = upcoming(now);
   const stillThere = list.findIndex((ev) => ev.id === currentId);

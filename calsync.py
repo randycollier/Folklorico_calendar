@@ -38,6 +38,8 @@ DISPLAY_DEFAULTS = {
     "seconds_per_event": 12,
     "max_events": 10,
     "hour12": True,
+    "qr_url": "",     # link the QR code opens; empty hides the QR code
+    "qr_text": "Dancers: scan to sign up for the private calendar",
 }
 
 log = logging.getLogger("calsync")
@@ -144,7 +146,11 @@ def fetch_google(cfg, session):
     # timeMin filters on an event's END, so anything still in progress today
     # is included.
     time_min = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    time_max = now + dt.timedelta(days=cfg["days_ahead"])
+    # Always reach the end of next month, so both calendars on screen are complete.
+    first_of_next = (now.replace(day=1) + dt.timedelta(days=32)).replace(day=1)
+    end_of_next = (first_of_next + dt.timedelta(days=32)).replace(day=1)
+    time_max = max(now + dt.timedelta(days=cfg["days_ahead"]),
+                   end_of_next.replace(hour=0, minute=0, second=0, microsecond=0))
     events, seen = [], set()
     for cal in cfg["calendars"]:
         params = {
