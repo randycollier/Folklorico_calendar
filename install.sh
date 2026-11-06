@@ -47,6 +47,31 @@ else
   echo "Keeping your existing /etc/default/caldisplay"
 fi
 
+step "Installing a blank mouse cursor (hides the arrow on screen)"
+python3 - <<'PY'
+import os, struct
+d = "/usr/share/icons/caldisplay-blank/cursors"
+os.makedirs(d, exist_ok=True)
+# Xcursor file with one fully transparent 1x1 image.
+image = struct.pack("<9I", 36, 0xFFFD0002, 24, 1, 1, 1, 0, 0, 0) + struct.pack("<I", 0)
+data = b"Xcur" + struct.pack("<3I", 16, 0x10000, 1) + struct.pack("<3I", 0xFFFD0002, 24, 28) + image
+with open(os.path.join(d, "default"), "wb") as f:
+    f.write(data)
+names = """left_ptr arrow top_left_arrow pointer hand hand1 hand2 text xterm ibeam
+wait watch progress left_ptr_watch half-busy crosshair cross move fleur grab grabbing
+openhand closedhand not-allowed crossed_circle help question_arrow context-menu
+cell copy alias all-scroll col-resize row-resize sb_h_double_arrow sb_v_double_arrow
+n-resize s-resize e-resize w-resize ne-resize nw-resize se-resize sw-resize
+ew-resize ns-resize nesw-resize nwse-resize zoom-in zoom-out vertical-text no-drop""".split()
+for n in names:
+    p = os.path.join(d, n)
+    if os.path.lexists(p):
+        os.remove(p)
+    os.symlink("default", p)
+with open("/usr/share/icons/caldisplay-blank/index.theme", "w") as f:
+    f.write("[Icon Theme]\nName=caldisplay-blank\nComment=Invisible cursor for the calendar kiosk\n")
+PY
+
 step "Enabling DDC/CI (i2c-dev)"
 echo i2c-dev > /etc/modules-load.d/caldisplay.conf
 modprobe i2c-dev || true

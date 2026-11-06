@@ -17,6 +17,11 @@ rm -rf "$PROFILE"
 
 CHROMIUM="$(command -v chromium || command -v chromium-browser)"
 
+# Invisible mouse cursor (installed by install.sh). Without it cage draws an
+# arrow in the middle of the screen whenever a mouse or touchpad is plugged in.
+export XCURSOR_THEME=caldisplay-blank
+export XCURSOR_SIZE=24
+
 exec cage -d -s -- "$CHROMIUM" \
   --kiosk \
   --ozone-platform=wayland \
